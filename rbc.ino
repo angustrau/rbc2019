@@ -213,9 +213,25 @@ void tierTwo() {
   int rightColour = getColour(SENSOR_RIGHT);
 
   if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
-    driveMotors(25,25);
+    driveMotors(25,25); //straight
   }
-
+  else if (leftColour == SENSOR_WHITE) {
+    // right
+  }
+  else if (rightColour == SENSOR_WHITE) {
+    //left
+  }
+  else if (rightColour != SENSOR_RED && leftColour == SENSOR_RED) {
+    //left
+    //lastTurn is left
+  }
+  else if (leftColour != SENSOR_RED && rightColour == SENSOR_RED) {
+    //right
+    //lastTurn right
+  }
+  else {
+    // forward
+  }
   if (leftColour == SENSOR_GREEN || leftColour == SENSOR_RED || leftColour == SENSOR_BLUE ) {
     if (rightColour != SENSOR_GREEN && rightColour != SENSOR_RED && rightColour != SENSOR_BLUE) {
       driveMotors(-10,25);
