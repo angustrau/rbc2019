@@ -38,6 +38,9 @@ const int SENSOR_FILTER[4][2] = {
 #define SENSOR_BLACK 3
 #define SENSOR_WHITE 4
 
+// The maximum reflection values on a clear filter over R, G, B, Bl, and W
+const int SENSOR_MAX_VALUES[] = { 15, 16, 15, 16, 10 };
+
 const int SENSORS[2][5] = {
   {3,13,12,11,4}, //OUTPUT, S0,S1,S2,S3
   {A4,A0,A1,A2,A3}
@@ -99,6 +102,20 @@ int getColour(int sensor) {
   }
 
   return SENSOR_BLUE;
+}
+
+// Returns an approximate location of the line between -1 and 1
+#define SENSOR_POS 0.5
+double getLinePos(int lineColour) {
+  // Naively assumes line is always between two sensors
+  // -1 is at left sensor, 1 is at right sensor
+  // TODO better positioning algorithm
+  int leftReflect = getSensor(SENSOR_LEFT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
+  int rightReflect = getSensor(SENSOR_RIGHT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
+
+  int range = leftReflect + rightReflect;
+  double pos = ((double)leftReflect / range * 2) - 1;
+  return constrain(pos, -1, 1);
 }
 
 #pragma endregion
@@ -202,10 +219,30 @@ void tierOne() {
 }
 
 double Kp = 1;
-double Ki = 1;
-double Kd = 1; 
+double Ki = 0;
+double Kd = 0;
+int lastColour = SENSOR_WHITE;
 void tierOnePID() {
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+
+  // Transition colour only from/to black. Block blue to green to smooth colour estimations
+  if (leftColour != SENSOR_WHITE && (leftColour == SENSOR_BLACK || lastColour == SENSOR_BLACK)) {
+    lastColour = leftColour;
+  } else if (rightColour != SENSOR_WHITE && (rightColour == SENSOR_BLACK || lastColour == SENSOR_BLACK)) {
+    lastColour = rightColour;
+  }
+
+  double error = getLinePos(lastColour);
   
+  // PID algorithm
+  double turn = 1;
+
+  // Convert turn to drive
+  double turnMagnitude = abs(turn);
+  double lGradient = ((double)TURN_FW_SPD - TURN_BW_SPD) / 2;
+  double rGradient = ((double)TURN_BW_SPD - TURN_FW_SPD) / 2;
+  driveMotors(-TURN_BW_SPD + lGradient*(1+turn), TURN_FW_SPD + rGradient*(1+turn));
 }
 
 void tierTwo() {
@@ -249,7 +286,7 @@ void setup() {
 
 void loop() {
   int powerState = digitalRead(MOTOR_ENABLE);
-  if(powerState == LOW) {
+  if (powerState == LOW) {
     tierOne();
   } else {
     debugRawSensor(SENSOR_RIGHT);
