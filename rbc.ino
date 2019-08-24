@@ -39,8 +39,8 @@ const int SENSOR_FILTER[4][2] = {
 #define SENSOR_WHITE 4
 
 const int SENSORS[2][5] = {
-  {8,9,10,11,12},
-  {8,9,10,11,12}
+  {3,13,12,11,4}, //OUTPUT, S0,S1,S2,S3
+  {A4,A0,A1,A2,A3}
 };
 
 void setupSensor(int sensor) {
@@ -104,17 +104,23 @@ int getColour(int sensor) {
 #pragma endregion
 
 #pragma region Motor Library
-#define MOTOR_LEFT_FW 0
-#define MOTOR_LEFT_BW 1
-#define MOTOR_RIGHT_FW 2
-#define MOTOR_RIGHT_BW 3 
+#define MOTOR_LEFT_FW 5
+#define MOTOR_LEFT_BW 6
+#define MOTOR_LEFT_ENABLE 7
+#define MOTOR_RIGHT_FW 9
+#define MOTOR_RIGHT_BW 10 
+#define MOTOR_RIGHT_ENABLE 8
 
 
 void setupMotors() {
   pinMode(MOTOR_LEFT_FW, OUTPUT);
   pinMode(MOTOR_LEFT_BW, OUTPUT);
+  pinMode(MOTOR_LEFT_ENABLE,OUTPUT);
+  digitalWrite(MOTOR_LEFT_ENABLE,HIGH);
   pinMode(MOTOR_RIGHT_FW, OUTPUT);
   pinMode(MOTOR_RIGHT_BW, OUTPUT);
+  pinMode(MOTOR_RIGHT_ENABLE,OUTPUT);
+  digitalWrite(MOTOR_RIGHT_ENABLE,HIGH);
 }
 
 void driveMotors(int speedLeft, int speedRight) {
@@ -185,15 +191,20 @@ void tierOne() {
   int rightColour = getColour(SENSOR_RIGHT);
 
   bool turnLeft = leftColour == SENSOR_BLACK;
-  bool turnRight = rightColour == SENSOR_BLACK;
+  bool turnRight = rightColour == SENSOR_BLACK || !turnLeft;
   
-  driveMotors(turnLeft ? 100 : 0, turnRight ? 100 : 0);
+  driveMotors(turnLeft ? 50 : 0, turnRight ? 50 : 0);
 }
 
 void tierTwo() {
   int leftColour = getColour(SENSOR_LEFT);
   int rightColour = getColour(SENSOR_RIGHT);
-  
+  if(leftColour == SENSOR_GREEN) {
+     
+  }
+  else if (leftColour == SENSOR_BLUE) {
+    //
+  }
   
   // green blue red
   //follow by colour priority
@@ -207,6 +218,7 @@ void tierThree() {
 void setup() {
   setupSensor(SENSOR_LEFT);
   setSensorScale(SENSOR_LEFT, SENSOR_SCALE_20);
+  setupMotors();
   Serial.begin(9600);
   
 }
@@ -214,7 +226,6 @@ void setup() {
 void loop() {
   //debugRawSensor();
   //debugSensorColour();
-  tierOne();
+  //tierOne();
+  driveMotors(255, 255);
 }
-
-
