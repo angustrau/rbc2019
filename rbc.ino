@@ -170,6 +170,8 @@ void debugRawSensor(int sensor) {
   Serial.print(getSensor(sensor,SENSOR_FILTER_GREEN));
   Serial.print("  B= ");
   Serial.print(getSensor(sensor,SENSOR_FILTER_BLUE));
+  Serial.print("  Y= ");
+  Serial.print(getSensor(sensor,SENSOR_FILTER_CLEAR));
   Serial.println();
 }
 
