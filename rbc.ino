@@ -247,30 +247,73 @@ void tierOnePID() {
   driveMotors(-TURN_BW_SPD + lGradient*(1+turn), TURN_FW_SPD + rGradient*(1+turn));
 }
 
+bool isColour(int colour) {
+  if( colour != SENSOR_WHITE && colour != SENSOR_BLACK) {
+    return true;
+  }
+  return false;
+}
+
 void tierTwo() {
   int leftColour = getColour(SENSOR_LEFT);
   int rightColour = getColour(SENSOR_RIGHT);
 
   if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
-    driveMotors(25,25);
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
   }
-
-  if (leftColour == SENSOR_GREEN || leftColour == SENSOR_RED || leftColour == SENSOR_BLUE ) {
-    if (rightColour != SENSOR_GREEN && rightColour != SENSOR_RED && rightColour != SENSOR_BLUE) {
-      driveMotors(-10,25);
-    }
-  } else if(rightColour == SENSOR_GREEN || rightColour == SENSOR_RED || rightColour == SENSOR_BLUE ) {
-    driveMotors(25,-10);
-  } else if (leftColour == SENSOR_BLACK) {
-    driveMotors(-10,25);
-  } else if (rightColour == SENSOR_BLACK) {
-    driveMotors(25,-10);
+  else if (leftColour == SENSOR_WHITE) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    // right
+  }
+  else if (rightColour == SENSOR_WHITE) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( isColour(leftColour) && !isColour(rightColour) ) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( !isColour(leftColour) && isColour(rightColour)) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    //right
+  }
+  else {
+      driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+    // forward, both 'coloured'
   }
 }
 
-void tierThree() {
-  // only follow green black priority??
 
+void isTierThreeColour() {
+  
+}
+void tierThree() { 
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+
+  if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+  }
+  else if (leftColour == SENSOR_WHITE) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    // right
+  }
+  else if (rightColour == SENSOR_WHITE) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( isColour(leftColour) && !isColour(rightColour) ) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( !isColour(leftColour) && isColour(rightColour)) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    //right
+  }
+  else {
+      driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+    // forward, both 'coloured'
+  }
 }
 
 #define MOTOR_ENABLE A5
