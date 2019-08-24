@@ -80,7 +80,7 @@ int getColour(int sensor) {
   int deltaRB = abs(red-blue);
   int deltaGB = abs(blue-green);
 
-  if(blue < 25 && green < 25 && red < 25) {
+  if (blue < 25 && green < 25 && red < 25) {
     return SENSOR_WHITE;
   }
 
@@ -118,12 +118,12 @@ int getColour(int sensor) {
 void setupMotors() {
   pinMode(MOTOR_LEFT_FW, OUTPUT);
   pinMode(MOTOR_LEFT_BW, OUTPUT);
-  pinMode(MOTOR_LEFT_ENABLE,OUTPUT);
-  digitalWrite(MOTOR_LEFT_ENABLE,HIGH);
+  pinMode(MOTOR_LEFT_ENABLE, OUTPUT);
+  digitalWrite(MOTOR_LEFT_ENABLE, HIGH);
   pinMode(MOTOR_RIGHT_FW, OUTPUT);
   pinMode(MOTOR_RIGHT_BW, OUTPUT);
-  pinMode(MOTOR_RIGHT_ENABLE,OUTPUT);
-  digitalWrite(MOTOR_RIGHT_ENABLE,HIGH);
+  pinMode(MOTOR_RIGHT_ENABLE, OUTPUT);
+  digitalWrite(MOTOR_RIGHT_ENABLE, HIGH);
 }
 
 void driveMotors(int speedLeft, int speedRight) {
@@ -157,7 +157,6 @@ void debugRawSensor(int sensor) {
   Serial.print("  B= ");
   Serial.print(getSensor(sensor,SENSOR_FILTER_BLUE));
   Serial.println();
-  delay(100);
 }
 
 void debugSensorColour(int sensor) {
@@ -197,13 +196,11 @@ void tierOne() {
   int rightColour = getColour(SENSOR_RIGHT);
 
 
-  if(leftColour != SENSOR_WHITE) {
+  if (leftColour != SENSOR_WHITE) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
-  }
-  else if(rightColour != SENSOR_WHITE ) {
+  } else if(rightColour != SENSOR_WHITE ) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
-  }
-  else {
+  } else {
     driveMotors(CRAWL_SPD,CRAWL_SPD);
   }
 }
@@ -219,21 +216,19 @@ void tierTwo() {
   int leftColour = getColour(SENSOR_LEFT);
   int rightColour = getColour(SENSOR_RIGHT);
 
-  if(leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
+  if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
     driveMotors(25,25);
   }
-  if(leftColour == SENSOR_GREEN || leftColour == SENSOR_RED || leftColour == SENSOR_BLUE ) {
-    if(rightColour != SENSOR_GREEN && rightColour != SENSOR_RED && rightColour != SENSOR_BLUE) {
+
+  if (leftColour == SENSOR_GREEN || leftColour == SENSOR_RED || leftColour == SENSOR_BLUE ) {
+    if (rightColour != SENSOR_GREEN && rightColour != SENSOR_RED && rightColour != SENSOR_BLUE) {
       driveMotors(-10,25);
     }
-  }
-  else if(rightColour == SENSOR_GREEN || rightColour == SENSOR_RED || rightColour == SENSOR_BLUE ) {
+  } else if(rightColour == SENSOR_GREEN || rightColour == SENSOR_RED || rightColour == SENSOR_BLUE ) {
     driveMotors(25,-10);
-  }
-  else if (leftColour == SENSOR_BLACK) {
+  } else if (leftColour == SENSOR_BLACK) {
     driveMotors(-10,25);
-  }
-  else if (rightColour == SENSOR_BLACK) {
+  } else if (rightColour == SENSOR_BLACK) {
     driveMotors(25,-10);
   }
 }
@@ -249,21 +244,21 @@ void setup() {
   setSensorScale(SENSOR_LEFT, SENSOR_SCALE_20);
   setSensorScale(SENSOR_RIGHT, SENSOR_SCALE_20);
 
-  pinMode(MOTOR_ENABLE,INPUT_PULLUP);
-
   setupMotors();
+
+  pinMode(MOTOR_ENABLE, INPUT_PULLUP);
   Serial.begin(9600);
   
 }
 
 void loop() {
-  int powerState = digitalRead(A5);
+  int powerState = digitalRead(MOTOR_ENABLE);
   if(powerState == LOW) {
     tierOne();
-  }
-  else {
+  } else {
     debugRawSensor(SENSOR_RIGHT);
     debugSensorColour(SENSOR_RIGHT);
+    delay(100);
   }
   
   //tierOne();
