@@ -1,0 +1,5 @@
+{
+    "sketch": "rbc.ino",
+    "port": "/dev/ttyUSB0",
+    "board": "arduino:avr:uno"
+}
