@@ -208,7 +208,7 @@ void tierOnePID() {
   
 }
 
-void isColour(int colour) {
+bool isColour(int colour) {
   if( colour != SENSOR_WHITE && colour != SENSOR_BLACK) {
     return true;
   }
@@ -223,19 +223,19 @@ void tierTwo() {
     driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
   }
   else if (leftColour == SENSOR_WHITE) {
-    driveMotors(TURN_FW_SPD,TURN_BW_SPD)
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     // right
   }
   else if (rightColour == SENSOR_WHITE) {
-    driveMotors(TURN_BW_SPD,TURN_FW_SPD)
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
   }
   else if ( isColour(leftColour) && !isColour(rightColour) ) {
-    driveMotors(TURN_BW_SPD,TURN_FW_SPD)
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
   }
   else if ( !isColour(leftColour) && isColour(rightColour)) {
-    driveMotors(TURN_FW_SPD,TURN_BW_SPD)
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     //right
   }
   else {
@@ -244,9 +244,37 @@ void tierTwo() {
   }
 }
 
-void tierThree() {
-  // only follow green black priority??
 
+void isTierThreeColour() {
+  
+}
+void tierThree() { 
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+
+  if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+  }
+  else if (leftColour == SENSOR_WHITE) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    // right
+  }
+  else if (rightColour == SENSOR_WHITE) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( isColour(leftColour) && !isColour(rightColour) ) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+    //left
+  }
+  else if ( !isColour(leftColour) && isColour(rightColour)) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+    //right
+  }
+  else {
+      driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+    // forward, both 'coloured'
+  }
 }
 
 #define MOTOR_ENABLE A5
