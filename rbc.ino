@@ -234,7 +234,7 @@ void tierTwo() {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD)
     //left
   }
-  else if ( !isColour(leftColour) && rightColour == SENSOR_RED) {
+  else if ( !isColour(leftColour) && isColour(rightColour)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD)
     //right
   }
