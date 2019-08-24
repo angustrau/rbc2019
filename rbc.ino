@@ -1,7 +1,4 @@
 #pragma region Sensor Library
-
-
-#define MOTOR_ENABLE A5
 #define SENSOR_LEFT 0
 #define SENSOR_RIGHT 1
 
@@ -163,26 +160,25 @@ void debugSensorColour(int sensor) {
   int colour = getColour(sensor);
   String colourString;
   
-  switch (colour)
-  {
-  case SENSOR_RED:
-    colourString = "Red";
-    break;
-  case SENSOR_GREEN:
-    colourString = "Green";
-    break;
-  case SENSOR_BLUE:
-    colourString = "Blue";
-    break;
-  case SENSOR_BLACK:
-    colourString = "Black";
-    break;
-  case SENSOR_WHITE:
-    colourString = "White";
-    break;
-  default:
-    colourString = "lol what help this is broken";
-    break;
+  switch (colour) {
+    case SENSOR_RED:
+      colourString = "Red";
+      break;
+    case SENSOR_GREEN:
+      colourString = "Green";
+      break;
+    case SENSOR_BLUE:
+      colourString = "Blue";
+      break;
+    case SENSOR_BLACK:
+      colourString = "Black";
+      break;
+    case SENSOR_WHITE:
+      colourString = "White";
+      break;
+    default:
+      colourString = "lol what help this is broken";
+      break;
   }
   Serial.println(colourString);
 }
@@ -238,6 +234,7 @@ void tierThree() {
 
 }
 
+#define MOTOR_ENABLE A5
 void setup() {
   setupSensor(SENSOR_LEFT);
   setupSensor(SENSOR_RIGHT);
@@ -248,7 +245,6 @@ void setup() {
 
   pinMode(MOTOR_ENABLE, INPUT_PULLUP);
   Serial.begin(9600);
-  
 }
 
 void loop() {
@@ -261,6 +257,5 @@ void loop() {
     delay(100);
   }
   
-  //tierOne();
-  //driveMotors(255, 255);
+  //driveMotors(25, 25);
 }
