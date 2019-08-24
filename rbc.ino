@@ -103,6 +103,42 @@ int getColour(int sensor) {
 
 #pragma endregion
 
+#pragma region Motor Library
+#define MOTOR_LEFT_FW 0
+#define MOTOR_LEFT_BW 1
+#define MOTOR_RIGHT_FW 2
+#define MOTOR_RIGHT_BW 3 
+
+
+void setupMotors() {
+  pinMode(MOTOR_LEFT_FW, OUTPUT);
+  pinMode(MOTOR_LEFT_BW, OUTPUT);
+  pinMode(MOTOR_RIGHT_FW, OUTPUT);
+  pinMode(MOTOR_RIGHT_BW, OUTPUT);
+}
+
+void driveMotors(int speedLeft, int speedRight) {
+  int leftValue = abs(speedLeft);
+  int rightValue = abs(speedRight);
+  
+  if (speedLeft < 0) {
+    digitalWrite(MOTOR_LEFT_FW, LOW);
+    analogWrite(MOTOR_LEFT_BW, leftValue);
+  } else {
+    analogWrite(MOTOR_LEFT_FW, leftValue);
+    digitalWrite(MOTOR_LEFT_BW, LOW);
+  }
+  
+  if (speedRight < 0) {
+    digitalWrite(MOTOR_RIGHT_FW, LOW);
+    analogWrite(MOTOR_RIGHT_BW, rightValue);
+  } else {
+    analogWrite(MOTOR_RIGHT_FW, rightValue);
+    digitalWrite(MOTOR_RIGHT_BW, LOW);
+  }
+}
+
+#pragma endregion
 
 void debugRawSensor() {
   Serial.print("R= ");
@@ -143,7 +179,30 @@ void debugSensorColour() {
   Serial.println(colourString);
 }
 
+void tierOne() {
+  // if not white, correct course
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
 
+  bool turnLeft = leftColour == SENSOR_BLACK;
+  bool turnRight = rightColour == SENSOR_BLACK;
+  
+  driveMotors(turnLeft ? 100 : 0, turnRight ? 100 : 0);
+}
+
+void tierTwo() {
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+  
+  
+  // green blue red
+  //follow by colour priority
+}
+
+void tierThree() {
+  // only follow green black priority??
+
+}
 
 void setup() {
   setupSensor(SENSOR_LEFT);
@@ -153,8 +212,9 @@ void setup() {
 }
 
 void loop() {
-  debugRawSensor();
+  //debugRawSensor();
   //debugSensorColour();
+  tierOne();
 }
 
 
