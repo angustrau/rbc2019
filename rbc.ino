@@ -220,9 +220,14 @@ void tierOne() {
   }
 }
 
-double Kp = 1;
-double Ki = 0;
-double Kd = 0;
+const double Kp = 1;
+const double Ki = 0;
+const double Kd = 0;
+#define PID_MAX_SPD 25
+#define PID_MIN_SPD -10
+double integral = 0;
+double lastError = 0;
+double derivative = 0;
 int lastColour = SENSOR_WHITE;
 void tierOnePID() {
   int leftColour = getColour(SENSOR_LEFT);
@@ -238,7 +243,10 @@ void tierOnePID() {
   double error = getLinePos(lastColour);
   
   // PID algorithm
-  double turn = 1;
+  integral += error;
+  derivative = error - lastError;
+  lastError = error;
+  double turn = (Kp * error) + (Ki * integral) + (Kd * derivative);
 
   // Convert turn to drive
   double turnMagnitude = abs(turn);
