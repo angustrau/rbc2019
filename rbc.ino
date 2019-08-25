@@ -88,24 +88,35 @@ int getColour(int sensor) {
     return SENSOR_RED;
   }
 
-  if (deltaRB < deltaRG && deltaRB < deltaGB) {
+  if ((true || deltaRB <= deltaRG) && deltaRB <= deltaGB) {
     return SENSOR_BLACK;
   }
+
   // red or green high here
     // if red high or green high
   // if delta between green and blue is around 10
   // green
   // if delta is around 20
   // blue
-  if(deltaGB > 15) {
-    return SENSOR_GREEN;
+  if(deltaGB < 15) {
+    return SENSOR_BLUE;
   }
 
-  return SENSOR_BLUE;
+  return SENSOR_GREEN;
+}
+
+double sensorLastColour[] = { SENSOR_WHITE, SENSOR_WHITE };
+int getColourLocking(int sensor) {
+  int colour = getColour(sensor);
+
+  // Transition colour only from/to black. Block blue to green to smooth colour estimations
+  if (colour != SENSOR_WHITE && (colour == SENSOR_BLACK || sensorLastColour[sensor] == SENSOR_BLACK)) {
+    sensorLastColour[sensor] = colour;
+  }
+  return sensorLastColour[sensor];
 }
 
 // Returns an approximate location of the line between -1 and 1
-#define SENSOR_POS 0.5
 double getLinePos(int lineColour) {
   // Naively assumes line is always between two sensors
   // -1 is at left sensor, 1 is at right sensor
@@ -121,12 +132,14 @@ double getLinePos(int lineColour) {
 #pragma endregion
 
 #pragma region Motor Library
-#define MOTOR_LEFT_FW 5
-#define MOTOR_LEFT_BW 6
+#define MOTOR_LEFT_FW 6
+#define MOTOR_LEFT_BW 5
 #define MOTOR_LEFT_ENABLE 7
-#define MOTOR_RIGHT_FW 9
-#define MOTOR_RIGHT_BW 10 
+#define MOTOR_LEFT_BIAS 1.15 // Bias for striaght travel
+#define MOTOR_RIGHT_FW 10
+#define MOTOR_RIGHT_BW 9 
 #define MOTOR_RIGHT_ENABLE 8
+#define MOTOR_RIGHT_BIAS 1
 
 
 void setupMotors() {
@@ -146,17 +159,17 @@ void driveMotors(int speedLeft, int speedRight) {
   
   if (speedLeft < 0) {
     digitalWrite(MOTOR_LEFT_FW, LOW);
-    analogWrite(MOTOR_LEFT_BW, leftValue);
+    analogWrite(MOTOR_LEFT_BW, leftValue*MOTOR_LEFT_BIAS);
   } else {
-    analogWrite(MOTOR_LEFT_FW, leftValue);
+    analogWrite(MOTOR_LEFT_FW, leftValue*MOTOR_LEFT_BIAS);
     digitalWrite(MOTOR_LEFT_BW, LOW);
   }
   
   if (speedRight < 0) {
     digitalWrite(MOTOR_RIGHT_FW, LOW);
-    analogWrite(MOTOR_RIGHT_BW, rightValue);
+    analogWrite(MOTOR_RIGHT_BW, rightValue*MOTOR_RIGHT_BIAS);
   } else {
-    analogWrite(MOTOR_RIGHT_FW, rightValue);
+    analogWrite(MOTOR_RIGHT_FW, rightValue*MOTOR_RIGHT_BIAS);
     digitalWrite(MOTOR_RIGHT_BW, LOW);
   }
 }
@@ -202,23 +215,9 @@ void debugSensorColour(int sensor) {
   Serial.println(colourString);
 }
 
-#define TURN_FW_SPD 25
-#define TURN_BW_SPD -10
+#define TURN_FW_SPD 35
+#define TURN_BW_SPD -20
 #define CRAWL_SPD 30
-void tierOne() {
-  // if not white, correct course
-  int leftColour = getColour(SENSOR_LEFT);
-  int rightColour = getColour(SENSOR_RIGHT);
-
-
-  if (leftColour != SENSOR_WHITE) {
-    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
-  } else if(rightColour != SENSOR_WHITE ) {
-    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
-  } else {
-    driveMotors(CRAWL_SPD,CRAWL_SPD);
-  }
-}
 
 const double Kp = 1;
 const double Ki = 0;
@@ -229,34 +228,55 @@ double integral = 0;
 double lastError = 0;
 double derivative = 0;
 int lastColour = SENSOR_WHITE;
-void tierOnePID() {
-  int leftColour = getColour(SENSOR_LEFT);
-  int rightColour = getColour(SENSOR_RIGHT);
-
-  // Transition colour only from/to black. Block blue to green to smooth colour estimations
-  if (leftColour != SENSOR_WHITE && (leftColour == SENSOR_BLACK || lastColour == SENSOR_BLACK)) {
-    lastColour = leftColour;
-  } else if (rightColour != SENSOR_WHITE && (rightColour == SENSOR_BLACK || lastColour == SENSOR_BLACK)) {
-    lastColour = rightColour;
-  }
+void drivePID() {
+  int leftColour = getColourLocking(SENSOR_LEFT);
+  int rightColour = getColourLocking(SENSOR_RIGHT);
 
   double error = getLinePos(lastColour);
   
   // PID algorithm
-  integral += error;
+  integral =  integral * (2/3) + error;
   derivative = error - lastError;
   lastError = error;
   double turn = (Kp * error) + (Ki * integral) + (Kd * derivative);
 
   // Convert turn to drive
+  turn = constrain(turn, -1, 1);
   double turnMagnitude = abs(turn);
   double lGradient = ((double)TURN_FW_SPD - TURN_BW_SPD) / 2;
   double rGradient = ((double)TURN_BW_SPD - TURN_FW_SPD) / 2;
   driveMotors(-TURN_BW_SPD + lGradient*(1+turn), TURN_FW_SPD + rGradient*(1+turn));
 }
 
+void tierOne() {
+  // if not white, correct course
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+
+  if (leftColour != SENSOR_WHITE && rightColour != SENSOR_WHITE) {
+    driveMotors(CRAWL_SPD,CRAWL_SPD);
+  } else if (leftColour != SENSOR_WHITE) {
+    driveMotors(TURN_BW_SPD,TURN_FW_SPD);
+  } else if(rightColour != SENSOR_WHITE ) {
+    driveMotors(TURN_FW_SPD,TURN_BW_SPD);
+  } else {
+    driveMotors(CRAWL_SPD,CRAWL_SPD);
+  }
+}
+
+void tierOnePID() {
+  drivePID();
+}
+
 bool isColour(int colour) {
   if( colour != SENSOR_WHITE && colour != SENSOR_BLACK) {
+    return true;
+  }
+  return false;
+}
+
+bool isLine(int colour) {
+  if( colour != SENSOR_WHITE) {
     return true;
   }
   return false;
@@ -268,32 +288,30 @@ void tierTwo() {
 
   if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
     driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
-  }
-  else if (leftColour == SENSOR_WHITE) {
+  } else if (leftColour == SENSOR_WHITE) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     // right
-  }
-  else if (rightColour == SENSOR_WHITE) {
+  } else if (rightColour == SENSOR_WHITE) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
-  }
-  else if ( isColour(leftColour) && !isColour(rightColour) ) {
+  } else if ( isColour(leftColour) && !isColour(rightColour) ) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
-  }
-  else if ( !isColour(leftColour) && isColour(rightColour)) {
+  } else if ( !isColour(leftColour) && isColour(rightColour)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     //right
-  }
-  else {
-      driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+  } else {
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
     // forward, both 'coloured'
   }
 }
 
 
-void isTierThreeColour() {
-  
+bool isWhiteBlueRed(int colour) {
+  if(colour == SENSOR_WHITE || colour == SENSOR_BLUE || colour == SENSOR_RED) {
+    return true;
+  }
+  return false;
 }
 void tierThree() { 
   int leftColour = getColour(SENSOR_LEFT);
@@ -302,19 +320,23 @@ void tierThree() {
   if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
     driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
   }
-  else if (leftColour == SENSOR_WHITE) {
+  else if (isWhiteBlueRed(leftColour)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     // right
   }
-  else if (rightColour == SENSOR_WHITE) {
+  else if (isWhiteBlueRed(rightColour)) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
   }
-  else if ( isColour(leftColour) && !isColour(rightColour) ) {
+  else if (isLine(leftColour) && isLine(rightColour)) {
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+    //straight
+  }
+  else if ( leftColour == SENSOR_GREEN && !(leftColour == SENSOR_GREEN) ) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
   }
-  else if ( !isColour(leftColour) && isColour(rightColour)) {
+  else if ( !(leftColour == SENSOR_GREEN) && (leftColour == SENSOR_GREEN)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     //right
   }
@@ -340,10 +362,20 @@ void setup() {
 void loop() {
   int powerState = digitalRead(MOTOR_ENABLE);
   if (powerState == LOW) {
-    tierOne();
+    //tierOne();
+    tierTwo();
+    //tierThree();
+    //driveMotors(25, 25);
   } else {
+    driveMotors(0, 0);
+
+    Serial.print("left  ");
+    debugRawSensor(SENSOR_LEFT);
+    debugSensorColour(SENSOR_LEFT);
+    Serial.print("right ");
     debugRawSensor(SENSOR_RIGHT);
     debugSensorColour(SENSOR_RIGHT);
+
     delay(100);
   }
   
