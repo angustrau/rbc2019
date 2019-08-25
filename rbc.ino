@@ -1,3 +1,42 @@
+#pragma region Configuration
+
+#pragma region Sensor
+// The maximum reflection values on a clear filter over R, G, B, Bl, and W
+const int SENSOR_MAX_VALUES[] = { 15, 16, 15, 20, 6 };
+
+const int SENSORS[2][5] = {
+  {3,13,12,11,4},  // Left:  OUTPUT, S0,S1,S2,S3
+  {A4,A0,A1,A2,A3} // Right: OUTPUT, S0,S1,S2,S3
+};
+#pragma endregion
+
+#pragma region Motor
+#define MOTOR_ENABLE A5 // Pin to use as an on-off switch for motors. Pull low to enable.
+
+#define MOTOR_LEFT_FW 6 // Left forwards drive pin
+#define MOTOR_LEFT_BW 5 // Left backwards drive pin
+#define MOTOR_LEFT_ENABLE 7 // Left enable pin
+#define MOTOR_LEFT_BIAS 1.15 // Boost left motor output
+#define MOTOR_RIGHT_FW 10 // Right forwards drive pin
+#define MOTOR_RIGHT_BW 9 // Right backwards drive pin
+#define MOTOR_RIGHT_ENABLE 8 // Right enable pin
+#define MOTOR_RIGHT_BIAS 1 // Boost right motor output
+
+#define TURN_FW_SPD 30 // Turning forward speed
+#define TURN_BW_SPD -10 // Turning reverse speed
+#define CRAWL_SPD 30 // Straight forward speed
+#pragma endregion
+
+#pragma region PID (unused)
+const double Kp = 0.4;
+const double Ki = 0;
+const double Kd = 0;
+#define PID_MAX_SPD 25
+#define PID_MIN_SPD -10
+#pragma endregion
+
+#pragma endregion
+
 #pragma region Sensor Library
 #define SENSOR_LEFT 0
 #define SENSOR_RIGHT 1
@@ -37,14 +76,6 @@ const int SENSOR_FILTER[4][2] = {
 #define SENSOR_BLUE 2
 #define SENSOR_BLACK 3
 #define SENSOR_WHITE 4
-
-// The maximum reflection values on a clear filter over R, G, B, Bl, and W
-const int SENSOR_MAX_VALUES[] = { 15, 16, 15, 20, 6 };
-
-const int SENSORS[2][5] = {
-  {3,13,12,11,4}, //OUTPUT, S0,S1,S2,S3
-  {A4,A0,A1,A2,A3}
-};
 
 void setupSensor(int sensor) {
   // Setup input pin
@@ -132,16 +163,6 @@ double getLinePos(int lineColour) {
 #pragma endregion
 
 #pragma region Motor Library
-#define MOTOR_LEFT_FW 6
-#define MOTOR_LEFT_BW 5
-#define MOTOR_LEFT_ENABLE 7
-#define MOTOR_LEFT_BIAS 1.15 // Bias for striaght travel
-#define MOTOR_RIGHT_FW 10
-#define MOTOR_RIGHT_BW 9 
-#define MOTOR_RIGHT_ENABLE 8
-#define MOTOR_RIGHT_BIAS 1
-
-
 void setupMotors() {
   pinMode(MOTOR_LEFT_FW, OUTPUT);
   pinMode(MOTOR_LEFT_BW, OUTPUT);
@@ -215,13 +236,6 @@ void debugSensorColour(int sensor) {
   Serial.println(colourString);
 }
 
-#define TURN_FW_SPD 30
-#define TURN_BW_SPD -10
-#define CRAWL_SPD 30
-
-
-
-
 double getError(int colour) {
   int left = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
   int right = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
@@ -229,17 +243,11 @@ double getError(int colour) {
   constrain(error,-1,1)
 
 }
-const double Kp = 0.4;
-const double Ki = 0;
-const double Kd = 0;
-#define PID_MAX_SPD 25
-#define PID_MIN_SPD -10
+
 double integral = 0;
 double lastError = 0;
 double derivative = 0;
 int lastColour = SENSOR_WHITE;
-
-
 void drivePID() {
   int leftColour = getColour(SENSOR_LEFT);
   int rightColour = getColour(SENSOR_RIGHT);
@@ -297,19 +305,12 @@ void tierOnePID() {
 }
 
 bool isColour(int colour) {
-  if( colour != SENSOR_WHITE && colour != SENSOR_BLACK) {
-    return true;
-  }
-  return false;
+  return colour != SENSOR_WHITE && colour != SENSOR_BLACK;
 }
 
 bool isLine(int colour) {
-  if( colour != SENSOR_WHITE) {
-    return true;
-  }
-  return false;
+  return colour != SENSOR_WHITE;
 }
-//test
 
 void tierTwo() {
   int leftColour = getColour(SENSOR_LEFT);
@@ -335,47 +336,37 @@ void tierTwo() {
   }
 }
 
-
 bool isWhiteBlueRed(int colour) {
-  if(colour == SENSOR_WHITE || colour == SENSOR_BLUE || colour == SENSOR_RED) {
-    return true;
-  }
-  return false;
+  return colour == SENSOR_WHITE || colour == SENSOR_BLUE || colour == SENSOR_RED;
 }
+
 void tierThree() { 
   int leftColour = getColour(SENSOR_LEFT);
   int rightColour = getColour(SENSOR_RIGHT);
 
   if (leftColour == SENSOR_WHITE && rightColour == SENSOR_WHITE) {
     driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
-  }
-  else if (isWhiteBlueRed(leftColour)) {
+  } else if (isWhiteBlueRed(leftColour)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     // right
-  }
-  else if (isWhiteBlueRed(rightColour)) {
+  } else if (isWhiteBlueRed(rightColour)) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
-  }
-  else if (isLine(leftColour) && isLine(rightColour)) {
+  } else if (isLine(leftColour) && isLine(rightColour)) {
     driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
     //straight
-  }
-  else if ( leftColour == SENSOR_GREEN && !(leftColour == SENSOR_GREEN) ) {
+  } else if ( leftColour == SENSOR_GREEN && !(leftColour == SENSOR_GREEN) ) {
     driveMotors(TURN_BW_SPD,TURN_FW_SPD);
     //left
-  }
-  else if ( !(leftColour == SENSOR_GREEN) && (leftColour == SENSOR_GREEN)) {
+  } else if ( !(leftColour == SENSOR_GREEN) && (leftColour == SENSOR_GREEN)) {
     driveMotors(TURN_FW_SPD,TURN_BW_SPD);
     //right
-  }
-  else {
-      driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
+  } else {
+    driveMotors(CRAWL_SPD,CRAWL_SPD); //straight
     // forward, both 'coloured'
   }
 }
 
-#define MOTOR_ENABLE A5
 void setup() {
   setupSensor(SENSOR_LEFT);
   setupSensor(SENSOR_RIGHT);
@@ -391,8 +382,8 @@ void setup() {
 void loop() {
   int powerState = digitalRead(MOTOR_ENABLE);
   if (powerState == LOW) {
-    tierOnePID();
-    //tierTwo();
+    //tierOnePID();
+    tierTwo();
     //tierThree();
     //driveMotors(25, 25);
   } else {
@@ -407,6 +398,4 @@ void loop() {
 
     delay(100);
   }
-  
-  //driveMotors(25, 25);
 }
