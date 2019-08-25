@@ -39,7 +39,7 @@ const int SENSOR_FILTER[4][2] = {
 #define SENSOR_WHITE 4
 
 // The maximum reflection values on a clear filter over R, G, B, Bl, and W
-const int SENSOR_MAX_VALUES[] = { 15, 16, 15, 16, 10 };
+const int SENSOR_MAX_VALUES[] = { 15, 16, 15, 20, 6 };
 
 const int SENSORS[2][5] = {
   {3,13,12,11,4}, //OUTPUT, S0,S1,S2,S3
@@ -124,9 +124,9 @@ double getLinePos(int lineColour) {
   int leftReflect = getSensor(SENSOR_LEFT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
   int rightReflect = getSensor(SENSOR_RIGHT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
 
-  int range = leftReflect + rightReflect;
-  double pos = ((double)leftReflect / range * 2) - 1;
-  return constrain(pos, -1, 1);
+  int range = max(leftReflect + rightReflect, 1);
+  double pos = ((double)leftReflect / (double)range * 2) - 1;
+  return -constrain(pos, -1, 1);
 }
 
 #pragma endregion
@@ -219,7 +219,17 @@ void debugSensorColour(int sensor) {
 #define TURN_BW_SPD -10
 #define CRAWL_SPD 30
 
-const double Kp = 1;
+
+
+
+double getError(int colour) {
+  int left = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
+  int right = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
+  int error = (left - right)/SENSOR_MAX_VALUES[colour]
+  constrain(error,-1,1)
+
+}
+const double Kp = 0.4;
 const double Ki = 0;
 const double Kd = 0;
 #define PID_MAX_SPD 25
@@ -228,11 +238,18 @@ double integral = 0;
 double lastError = 0;
 double derivative = 0;
 int lastColour = SENSOR_WHITE;
-void drivePID() {
-  int leftColour = getColourLocking(SENSOR_LEFT);
-  int rightColour = getColourLocking(SENSOR_RIGHT);
 
-  double error = getLinePos(lastColour);
+
+void drivePID() {
+  int leftColour = getColour(SENSOR_LEFT);
+  int rightColour = getColour(SENSOR_RIGHT);
+  if(leftColour != SENSOR_WHITE) {
+    lastColour = leftColour;
+  }
+  else if(rightColour != SENSOR_WHITE) {
+    lastColour = rightColour;
+  }
+  double error = getError(lastColour);
   
   // PID algorithm
   integral =  integral * (2/3) + error;
@@ -240,12 +257,23 @@ void drivePID() {
   lastError = error;
   double turn = (Kp * error) + (Ki * integral) + (Kd * derivative);
 
+  Serial.print(" terms: error ");
+  Serial.print(error);
+  Serial.print( " integral ");
+  Serial.print(integral);
+  Serial.print("derivative ");
+  Serial.print(derivative);
+  Serial.print(" Turn");
+  Serial.print(turn);
+  Serial.println(" ");
+
   // Convert turn to drive
   turn = constrain(turn, -1, 1);
   double turnMagnitude = abs(turn);
   double lGradient = ((double)TURN_FW_SPD - TURN_BW_SPD) / 2;
   double rGradient = ((double)TURN_BW_SPD - TURN_FW_SPD) / 2;
   driveMotors(-TURN_BW_SPD + lGradient*(1+turn), TURN_FW_SPD + rGradient*(1+turn));
+
 }
 
 void tierOne() {
