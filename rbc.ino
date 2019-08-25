@@ -215,8 +215,8 @@ void debugSensorColour(int sensor) {
   Serial.println(colourString);
 }
 
-#define TURN_FW_SPD 35
-#define TURN_BW_SPD -20
+#define TURN_FW_SPD 30
+#define TURN_BW_SPD -10
 #define CRAWL_SPD 30
 
 const double Kp = 1;
@@ -363,8 +363,8 @@ void setup() {
 void loop() {
   int powerState = digitalRead(MOTOR_ENABLE);
   if (powerState == LOW) {
-    //tierOne();
-    tierTwo();
+    tierOnePID();
+    //tierTwo();
     //tierThree();
     //driveMotors(25, 25);
   } else {
