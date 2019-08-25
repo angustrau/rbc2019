@@ -28,11 +28,11 @@ const int SENSORS[2][5] = {
 #pragma endregion
 
 #pragma region PID (unused)
-const double Kp = 0.4;
-const double Ki = 0;
-const double Kd = 0;
-#define PID_MAX_SPD 25
-#define PID_MIN_SPD -10
+const double Kp = 0.4; // PID proportional term (-1 to 1)
+const double Ki = 0; // PID integral term (-1 to 1)
+const double Kd = 0; // PID derivative term (-1 to 1)
+#define PID_MAX_SPD 25 // Maximum output speed
+#define PID_MIN_SPD -10 // Minimum output speed
 #pragma endregion
 
 #pragma endregion
@@ -86,22 +86,26 @@ void setupSensor(int sensor) {
   }
 }
 
+// Scales the frequency of the sensor outputs
 void setSensorScale(int sensor, int scale) {
   digitalWrite(SENSORS[sensor][SENSOR_S0], SENSOR_SCALE[scale][0]);
   digitalWrite(SENSORS[sensor][SENSOR_S1], SENSOR_SCALE[scale][1]);
 }
 
+// Sets the filter applied to the sensor
 void setSensorFilter(int sensor, int filter) {
   digitalWrite(SENSORS[sensor][SENSOR_S2], SENSOR_FILTER[filter][0]);
   digitalWrite(SENSORS[sensor][SENSOR_S3], SENSOR_FILTER[filter][1]);
 }
 
+// Gets raw sensor data with a filter
 int getSensor(int sensor, int filter) {
   setSensorFilter(sensor, filter);
   int frequency = pulseIn(SENSORS[sensor][SENSOR_IN], LOW);
   return frequency;
 }
 
+// Gets the colour under a sensor
 int getColour(int sensor) {
   int red = getSensor(sensor, SENSOR_FILTER_RED);
   int green = getSensor(sensor, SENSOR_FILTER_GREEN);
@@ -136,6 +140,7 @@ int getColour(int sensor) {
   return SENSOR_GREEN;
 }
 
+// Get the colour under a sensor. Prevents colour flickering.
 double sensorLastColour[] = { SENSOR_WHITE, SENSOR_WHITE };
 int getColourLocking(int sensor) {
   int colour = getColour(sensor);
@@ -147,17 +152,12 @@ int getColourLocking(int sensor) {
   return sensorLastColour[sensor];
 }
 
-// Returns an approximate location of the line between -1 and 1
-double getLinePos(int lineColour) {
-  // Naively assumes line is always between two sensors
-  // -1 is at left sensor, 1 is at right sensor
-  // TODO better positioning algorithm
-  int leftReflect = getSensor(SENSOR_LEFT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
-  int rightReflect = getSensor(SENSOR_RIGHT, SENSOR_FILTER_CLEAR) - SENSOR_MAX_VALUES[lineColour];
-
-  int range = max(leftReflect + rightReflect, 1);
-  double pos = ((double)leftReflect / (double)range * 2) - 1;
-  return -constrain(pos, -1, 1);
+// Returns an approximate error of the line between -1 and 1
+double getError(int colour) {
+  int left = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
+  int right = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
+  int error = (left - right)/SENSOR_MAX_VALUES[colour];
+  return constrain(error,-1,1);
 }
 
 #pragma endregion
@@ -236,14 +236,6 @@ void debugSensorColour(int sensor) {
   Serial.println(colourString);
 }
 
-double getError(int colour) {
-  int left = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
-  int right = getSensor(SENSOR_LEFT,SENSOR_FILTER_CLEAR);
-  int error = (left - right)/SENSOR_MAX_VALUES[colour]
-  constrain(error,-1,1)
-
-}
-
 double integral = 0;
 double lastError = 0;
 double derivative = 0;
@@ -300,6 +292,7 @@ void tierOne() {
   }
 }
 
+// Unused
 void tierOnePID() {
   drivePID();
 }
